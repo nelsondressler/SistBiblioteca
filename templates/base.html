@@ -1,0 +1,17 @@
+{% load staticfiles %}
+
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Bibinterativa - {% block tituloPagina %}{% endblock %}</title>
+
+    <link rel="stylesheet" href="{% static 'css/padrao.css' %}">
+  </head>
+  <body>
+    <div class="">
+      {% block conteudo %}
+      {% endblock %}
+    </div>
+  </body>
+</html>

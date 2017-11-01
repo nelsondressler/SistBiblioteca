@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+
+{% block tituloPagina %} Pesquisa de Livros {% endblock %}
+
+{% block conteudo %}
+  <h1>Pesquisa de Livros</h1>
+
+  <div class="">
+    <p>Olá {{username}}, favor preencher com os livros que já foram lidos até o momento</p>
+    <p>Obs: Caso algum livro não seja encontrado, favor ignorar o mesmo, pois os livros se limitam à sua disponibilidade no banco de dados da biblioteca.</p>
+  </div>
+
+  <form class="" action="index.html" method="post">
+    {% csrf_token %}
+    {{livro_form.titulo}}
+    <input type="submit" name="" value="Buscar">
+  </form>
+
+  {% block resultado %}
+  {% endblock %}
+{% endblock %}
