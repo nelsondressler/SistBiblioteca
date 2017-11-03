@@ -15,14 +15,9 @@ import numpy as np
 from livro.libs import ProcessamentoLivros
 
 class ProcessamentoUsuarios:
-    def __init__(self, nomeArquivo, modelo = 'livro.Livro'):
-        self.sessao = 0
-        self.ip = ''
-
-        self.nome = ''
-        self.email = ''
-        self.login = ''
-        self.senha = ''
+    def __init__(self, usuario, sessao):
+        self.sessao = sessao
+        self.usuario = usuario
 
         self.qtdRetornados = 30
         self.qtdRecomendados = 5
@@ -44,11 +39,9 @@ class ProcessamentoUsuarios:
         palavras = [slugify(elemento) for elemento in palavras]
         stopwords = [slugify(elemento) for elemento in stopwords]
 
-        palavras = [elemento for elemento in palavras if elemento not in stopwords]
+        palavras = [elemento.strip() for elemento in palavras if elemento not in stopwords]
 
         for p in palavras:
-            p = p.strip()
-
             PesquisaPalavraChave.objects.get_or_create(nome = p)
             self.palavrasChave.append(p)
 
@@ -57,9 +50,11 @@ class ProcessamentoUsuarios:
 
     def CarregarRecomendados(self):
         for id in self.idsSelecionados:
-            ids = procLivros.CalcularIdsLivrosMaisProximos(id, self.qtdRecomendados)
+            blackList = []
+            
+            ids = procLivros.CalcularIdsLivrosMaisProximos(id, self.qtdRecomendados, blackList)
             self.idsRecomendados.extend(ids)
 
-    #def CarregarPesquisaBD(self):
+    #def CarregarSelecionadosBD(self):
     #def CarregarRecomendadosBD(self):
     #def CarregarRatingsBD(self):

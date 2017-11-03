@@ -11,32 +11,57 @@ from livro.libs import ProcessamentoLivros
 from livro.models import Livro, Peso, Similaridade
 from termo.models import Termo
 
+from django.db.models import When, Case, F, IntegerField, FloatField
+
 import numpy as np
 
-procL = ProcessamentoLivros('livros', 'livro.Livro')
-procL.AtualizarDados()
+procLivros = ProcessamentoLivros('livros', 'livro.Livro')
+procLivros.AtualizarDados()
 
-procL.CarregarIdsLivroTermosMatrizesMN()
+#procLivros.CarregarMatrizFrequencias()
+#procLivros.CarregarMatrizTF()
+#procLivros.CarregarMatrizIDF()
+#procLivros.CarregarMatrizTFIDF()
+#procLivros.CarregarVetorMedias()
+#procLivros.CarregarMatrizPesos()
+#procLivros.CarregarPesosBD()
 
-procL.CarregarMatrizFrequencias()
-procL.CarregarMatrizTF()
-procL.CarregarMatrizIDF()
-procL.CarregarMatrizTFIDF()
-procL.CarregarVetorMedias()
-procL.CarregarMatrizPesos()
-procL.CarregarPesosBD()
+procLivros.RecuperarMatrizPesos()
+procLivros.CarregarMatrizSimilaridades()
+procLivros.CarregarSimilaridadesBD()
 
-procL.CarregarIdsLivrosMatrizesMM()
+procLivros.RecuperarMatrizSimilaridades()
 
-procL.CarregarMatrizSimilaridades()
-procL.CarregarSimilaridadesBD()
+#Opção 1: ineficiente
+m = []
+for idLivro in procLivros.livroIds:
+    colunas = []
+    for idTermo in procLivros.termoIds:
+        try:
+            colunas.append(Peso.objects.filter(livro__id = idLivro, termo__id = idTermo)[0].valor)
+        except:
+            colunas.append(0)
+    print('[Pesos] Livro ' + str(idLivro) + ' carregado.')
+    m.append(colunas)
 
+idLivro = procLivros.livroIds[0]
+Termo.objects.order_by('id').annotate(pesoij = Case(When(peso__livro_id = idLivro, then = 'peso__valor'), default = 0, output_field = FloatField())).values_list('pesoij', flat = True)
 
-termoIds = Termo.objects.order_by('id').values_list('id', flat = True)
-livroIds = Livro.objects.order_by('id').values_list('id', flat = True)
-procL.idsLivroTermos.append((livroIds, termoIds))
-print(ids)
+#Opção 2: eficiente
+m = []
+for idLivro in procLivros.livroIds:
+    m.append(Termo.objects.order_by('id').annotate(pesoij = Case(When(peso__livro_id = idLivro, then = 'peso__valor'), default = 0, output_field = FloatField())).values_list('pesoij', flat = True))
 
+m = np.matrix(m)
+
+idLivro = procLivros.livroIds[1]
+colunas = []
+for j, idTermo in enumerate(procLivros.termoIds):
+    valor = Peso.objects.filter(livro__id = idLivro, termo__id = idTermo)
+    if valor:
+        colunas.append(float(str(valor[0])))
+    else:
+        colunas.append(0)
 
 id = idLivroI
 n = quantElementos
