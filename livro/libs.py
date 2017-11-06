@@ -355,7 +355,7 @@ class ProcessamentoLivros:
 
             for idTermo in self.termoIds:
                 try:
-                    colunas.append(Peso.objects.filter(livro__id = idLivro, termo__id = idTermo)[0].valor)
+                    colunas.append(Peso.objects.filter(livro__id = idLivro, termo__id = idTermo).values_list('valor', flat = True)[0])
                 except:
                     colunas.append(0)
 
@@ -419,7 +419,7 @@ class ProcessamentoLivros:
 
             for idLivroJ in self.livroIds:
                 try:
-                    colunas.append(Similaridade.objects.filter(livro_i__id = idLivroI, livro_j__id = idLivroJ)[0].valor)
+                    colunas.append(Similaridade.objects.filter(livro_i__id = idLivroI, livro_j__id = idLivroJ).values_list('valor', flat = True)[0])
                 except:
                     colunas.append(0)
 
@@ -433,12 +433,13 @@ class ProcessamentoLivros:
 
         self.matrizSimilaridades = np.matrix(m)
 
-    def CalcularIdsLivrosMaisProximos(self, id, qtde, blackList):
-        ids = Similaridade.objects.filter(livro_i__id = id).exclude(livro_j__id__in = blackList).order_by('-valor').value_list('livro_j__id')[:n]
+    def RecuperarIdsLivrosMaisProximos(self, id, qtde, idsNegados = []):
+        valores = Similaridade.objects.filter(livro_i__id = id).exclude(livro_j__id = id).exclude(livro_j__id__in = idsNegados).order_by('-valor').values_list('valor', flat = True)[:qtde]
+        ids = Similaridade.objects.filter(livro_i__id = id).exclude(livro_j__id = id).order_by('-valor').values_list('livro_j__id', flat = True)[:n]
         return ids
 
-    def CalcularLivrosMaisProximos(self, id, qtde):
-        livros = Livro.objects.filter(similaridade_livro_i__id = id).order_by('-similaridade__valor').value_list('similaridade_livro_j')[:n]
+    def RecuperarLivrosMaisProximos(self, ids = []):
+        livros = Livro.objects.filter(id__in = ids)
         return livros
 
     def ExibirIds(self, tipo):
@@ -473,3 +474,34 @@ class ProcessamentoLivros:
             print(self.matrizSimilaridades)
         else:
             print('Tipo incorreto!')
+
+        def DadosCarregados(self):
+            if not self.qtdTotalDocs or not self.qtdTotalPesos or not self.qtdTotalSimilaridades:
+                return False
+
+            return True
+
+        def ProcessarDados(self):
+            self.AtualizarDados()
+
+            if not self.qtdTotalDocs:
+                self.GerarArquivoJSON()
+                self.CarregarFixtures()
+                self.CarregarStopWords()
+                self.CarregarTermos()
+            else:
+                if not self.qtdTotalSimilaridades:
+                    if not self.qtdTotalPesos:
+                        self.CarregarMatrizFrequencias()
+                        self.CarregarMatrizTF()
+                        self.CarregarMatrizIDF()
+                        self.CarregarMatrizTFIDF()
+                        self.CarregarVetorMedias()
+                        self.CarregarMatrizPesos()
+                        self.CarregarPesosBD()
+                    else:
+                        self.RecuperarMatrizPesos()
+                    self.CarregarMatrizSimilaridades()
+                    self.CarregarSimilaridadesBD()
+                else:
+                    self.RecuperarMatrizSimilaridades()
