@@ -37,6 +37,8 @@ class ProcessamentoLivros:
 
         self.qtdTotalDocs = 0
         self.qtdTotalTermos = 0
+        self.qtdTotalPesos = 0
+        self.qtdTotalSimilaridades = 0
 
         self.termoIds = []
         self.livroIds = []
@@ -55,6 +57,8 @@ class ProcessamentoLivros:
     def AtualizarDados(self):
         self.qtdTotalDocs = Livro.objects.count()
         self.qtdTotalTermos = Termo.objects.count()
+        self.qtdTotalPesos = Peso.objects.count()
+        self.qtdTotalSimilaridades = Similaridade.objects.count()
 
         self.termoIds = Termo.objects.order_by('id').values_list('id', flat = True)
         self.livroIds = Livro.objects.order_by('id').values_list('id', flat = True)
@@ -346,22 +350,22 @@ class ProcessamentoLivros:
         m = []
 
         #Opção 1: ineficiente
-        #for idLivro in procLivros.livroIds:
-            #colunas = []
+        for idLivro in self.livroIds:
+            colunas = []
 
-            #for idTermo in procLivros.termoIds:
-                #try:
-                    #colunas.append(Peso.objects.filter(livro__id = idLivro, termo__id = idTermo)[0].valor)
-                #except:
-                    #colunas.append(0)
+            for idTermo in self.termoIds:
+                try:
+                    colunas.append(Peso.objects.filter(livro__id = idLivro, termo__id = idTermo)[0].valor)
+                except:
+                    colunas.append(0)
 
-            #print('[Pesos] Livro ' + str(idLivro) + ' carregado.')
-            #m.append(colunas)
+            print('[Pesos] Livro ' + str(idLivro) + ' carregado.')
+            m.append(colunas)
 
         #Opção 2: eficiente
-        for idLivro in self.livroIds:
-            m.append(Termo.objects.order_by('id').annotate(pesoij = Case(When(peso__livro_id = idLivro, then = 'peso__valor'), default = 0, output_field = FloatField())).values_list('pesoij', flat = True))
-            print('[Pesos] Livro ' + str(idLivro) + ' carregado.')
+        #for idLivro in self.livroIds:
+            #m.append(Termo.objects.order_by('id').annotate(pesoij = Case(When(peso__livro_id = idLivro, then = 'peso__valor'), default = 0, output_field = FloatField())).values_list('pesoij', flat = True))
+            #print('[Pesos] Livro ' + str(idLivro) + ' carregado.')
 
         self.matrizPesos = np.matrix(m)
 
@@ -377,9 +381,10 @@ class ProcessamentoLivros:
                 somatorioDj = np.sum(np.power(self.matrizPesos[j], 2))
 
                 #Calculando a similaridade de D(i,j)
-                similaridadeIJ = somatorioDiDj / math.sqrt(somatorioDi, somatorioDj)
+                similaridadeIJ = somatorioDiDj / math.sqrt(somatorioDi * somatorioDj)
 
                 colunas.append(similaridadeIJ)
+                #print('Sim[' + str(idLivroI) + ',' + str(idLivroJ) + '] = ' + str(similaridadeIJ))
 
             mSimilaridades.append(colunas)
             print('[Similaridades] Livro ' + str(idLivroI) + ' calculado.')
@@ -392,8 +397,8 @@ class ProcessamentoLivros:
             for j, idLivroJ in enumerate(self.livroIds):
                 livroJ = Livro.objects.get(id = idLivroJ)
                 if self.matrizSimilaridades[i,j]:
-                    Similaridade.objects.get_or_create(livro_i = idLivroI, livro_j = idLivroJ, valor = self.matrizSimilaridades[i,j])
-                    print('[BD] Peso[' + str(idLivroI) + ',' + str(idTermoJ) + ']' + ' inserido.')
+                    Similaridade.objects.get_or_create(livro_i = livroI, livro_j = livroJ, valor = self.matrizSimilaridades[i,j])
+                    print('[BD] Similaridade[' + str(idLivroI) + ',' + str(idLivroJ) + ']' + ' inserido.')
 
     def ProcessarSimilaridades(self):
         #(1) Valores de totais, IDs MxN, IDs MxM
@@ -408,8 +413,23 @@ class ProcessamentoLivros:
     def RecuperarMatrizSimilaridades(self):
         m = []
 
+        #Opção 1: ineficiente
         for idLivroI in self.livroIds:
-            m.append(Livro.objects.order_by('id').annotate(sim = Case(When(similaridade__livro_i_id = idLivroI, then = 'similaridade__valor'), default = 0, output_field = FloatField())).values_list('sim', flat = True))
+            colunas = []
+
+            for idLivroJ in self.livroIds:
+                try:
+                    colunas.append(Similaridade.objects.filter(livro_i__id = idLivroI, livro_j__id = idLivroJ)[0].valor)
+                except:
+                    colunas.append(0)
+
+            print('[Similaridades] Livro ' + str(idLivroI) + ' carregado.')
+            m.append(colunas)
+
+        #Opção 2: eficiente
+        #for idLivroI in self.livroIds:
+            #m.append(Similaridade.objects.order_by('livro_j__id').annotate(sim = Case(When(livro_i_id = idLivroI, then = 'valor'), default = 0, output_field = FloatField())).values_list('sim', flat = True))
+            #print('[Similaridades] Livro ' + str(idLivroI) + ' carregado.')
 
         self.matrizSimilaridades = np.matrix(m)
 

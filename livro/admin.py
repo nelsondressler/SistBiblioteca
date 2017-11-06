@@ -24,11 +24,11 @@ class PesoAdmin(admin.ModelAdmin):
 class SimilaridadeAdmin(admin.ModelAdmin):
     list_display = ['id', 'livro_i', 'livro_j', 'valor'] # campos de apresentação
     list_display_links = ['id', 'livro_i', 'livro_j', 'valor'] # campos habilitados para links
-    search_fields = ['livro_i', 'livro_j'] # campos de busca
+    search_fields = ['livro_i'] # campos de busca
     raw_id_fields = [] # campos de chave estrangeira (processamento de relacionamento)
 
     def get_ordering(self, request):
-        return ['id']
+        return ['livro_i']
 
 admin.site.register(Livro, LivroAdmin)
 admin.site.register(Peso, PesoAdmin)
