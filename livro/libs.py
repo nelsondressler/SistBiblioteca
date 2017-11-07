@@ -433,15 +433,6 @@ class ProcessamentoLivros:
 
         self.matrizSimilaridades = np.matrix(m)
 
-    def RecuperarIdsLivrosMaisProximos(self, id, qtde, idsNegados = []):
-        valores = Similaridade.objects.filter(livro_i__id = id).exclude(livro_j__id = id).exclude(livro_j__id__in = idsNegados).order_by('-valor').values_list('valor', flat = True)[:qtde]
-        ids = Similaridade.objects.filter(livro_i__id = id).exclude(livro_j__id = id).order_by('-valor').values_list('livro_j__id', flat = True)[:n]
-        return ids
-
-    def RecuperarLivrosMaisProximos(self, ids = []):
-        livros = Livro.objects.filter(id__in = ids)
-        return livros
-
     def ExibirIds(self, tipo):
         #Tipos: LIVROS_M, TERMOS_N
         if tipo == self.TERMOS_N:
@@ -475,33 +466,27 @@ class ProcessamentoLivros:
         else:
             print('Tipo incorreto!')
 
-        def DadosCarregados(self):
-            if not self.qtdTotalDocs or not self.qtdTotalPesos or not self.qtdTotalSimilaridades:
-                return False
+    def ProcessarDados(self):
+        self.AtualizarDados()
 
-            return True
-
-        def ProcessarDados(self):
-            self.AtualizarDados()
-
-            if not self.qtdTotalDocs:
-                self.GerarArquivoJSON()
-                self.CarregarFixtures()
-                self.CarregarStopWords()
-                self.CarregarTermos()
-            else:
-                if not self.qtdTotalSimilaridades:
-                    if not self.qtdTotalPesos:
-                        self.CarregarMatrizFrequencias()
-                        self.CarregarMatrizTF()
-                        self.CarregarMatrizIDF()
-                        self.CarregarMatrizTFIDF()
-                        self.CarregarVetorMedias()
-                        self.CarregarMatrizPesos()
-                        self.CarregarPesosBD()
-                    else:
-                        self.RecuperarMatrizPesos()
-                    self.CarregarMatrizSimilaridades()
-                    self.CarregarSimilaridadesBD()
+        if not self.qtdTotalDocs:
+            self.GerarArquivoJSON()
+            self.CarregarFixtures()
+            self.CarregarStopWords()
+            self.CarregarTermos()
+        else:
+            if not self.qtdTotalSimilaridades:
+                if not self.qtdTotalPesos:
+                    self.CarregarMatrizFrequencias()
+                    self.CarregarMatrizTF()
+                    self.CarregarMatrizIDF()
+                    self.CarregarMatrizTFIDF()
+                    self.CarregarVetorMedias()
+                    self.CarregarMatrizPesos()
+                    self.CarregarPesosBD()
                 else:
-                    self.RecuperarMatrizSimilaridades()
+                    self.RecuperarMatrizPesos()
+                self.CarregarMatrizSimilaridades()
+                self.CarregarSimilaridadesBD()
+            else:
+                self.RecuperarMatrizSimilaridades()

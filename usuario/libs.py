@@ -7,15 +7,18 @@ from django.utils.text import slugify
 
 from livro.models import Livro, Peso, Similaridade
 from stopword.models import Stopword
-from usuario.models import Usuario, Pesquisa, PesquisaPalavraChave, PesquisaLivroSelecionado, PesquisaRecomendacao 
+from usuario.models import Usuario, Pesquisa, PesquisaPalavraChave, PesquisaLivroSelecionado, PesquisaRecomendacao
 
 import math
 import numpy as np
 
-from livro.libs import ProcessamentoLivros
-
 class ProcessamentoUsuarios:
     def __init__(self, usuario, sessao):
+        self.qtdTotalDocs = 0
+        self.qtdTotalTermos = 0
+        self.qtdTotalPesos = 0
+        self.qtdTotalSimilaridades = 0
+
         self.sessao = sessao
         self.usuario = usuario
         self.usuario = Usuario(nome = self.usuario, sessao = self.sessao)
@@ -27,25 +30,40 @@ class ProcessamentoUsuarios:
         self.qtdRecuperados = 30
         self.qtdRecomendados = 5
 
-        self.procLivros = ProcessamentoLivros('livros', 'livro.Livro')
-
-        procLivros.AtualizarDados()
-        if not procLivros.DadosCarregados():
-            self.msg = "Favor carregar dados referentes aos livros!"
-        else:
-            self.procLivros.ProcessarDados()
-
         self.palavrasChave = []
         self.idsRecuperados = []
 
         self.idsSelecionados = []
 
-        self.idsRecomendados = []
+        self.idsRecomendados = [] #[(idSelecionado , [idsRecomendados])]
         self.ratingsRecomendados = [] # (like = 1 ou dislike = 0) por livro recomendado
+        self.idsBlackList = [] #[(idSelecionado , [idsNegados])]
 
-        self.idsRatingPessoal = [] # (dislikes pessoal / total pessoal) por (livro selecionado x livro recomendado)
-        self.idsRatingGlobal = [] # (dislikes global / total global) por (livro selecionado x livro recomendado)
-        self.idsNegados = []
+    def AtualizarDados(self):
+        self.qtdTotalDocs = Livro.objects.count()
+        self.qtdTotalTermos = Termo.objects.count()
+        self.qtdTotalPesos = Peso.objects.count()
+        self.qtdTotalSimilaridades = Similaridade.objects.count()
+
+    def LivrosCarregados(self):
+        self.AtualizarDados()
+
+        if not self.qtdTotalDocs or not self.qtdTotalTermos or not self.qtdTotalPesos or not self.qtdTotalSimilaridades:
+            return False
+
+        return True
+
+    def RecuperarLivrosMaisProximos(self, id, idsNegados):
+        livros = Livro.objects.filter(id__in = ids).exclude(livro_j__id = id).order_by('-valor')[:self.qtdRecomendados]
+        return livros
+
+    def RecuperarIdsLivrosMaisProximos(self, id, idsNegados):
+        ids = Similaridade.objects.filter(livro_i__id = id).exclude(livro_j__id = id).order_by('-valor').values_list('livro_j__id', flat = True)[:self.qtdRecomendados]
+        return ids
+
+    def RecuperarValoresLivrosMaisProximos(self, id, idsNegados = []):
+        valores = Similaridade.objects.filter(livro_i__id = id).exclude(livro_j__id = id).exclude(livro_j__id__in = idsNegados).order_by('-valor').values_list('valor', flat = True)[:self.qtdRecomendados]
+        return valores
 
     def CadastrarUsuario(self):
         self.usuario.save()
@@ -73,9 +91,9 @@ class ProcessamentoUsuarios:
 
         for i, palavra in enumerate(self.palavrasChave):
             if i == 0:
-                self.idsRecuperados = Livro.objects.filter(titulo__unaccent__contains = palavra).values_list('id', flat = True)
+                self.idsRecuperados = Livro.objects.filter(titulo__unaccent__contains = palavra).values_list('id', flat = True) #"CREATE EXTENSION unaccent;" no PostgreSQL para habilitar o filtro unaccent
             else:
-                idLivros = Livro.objects.filter(titulo__unaccent__contains = palavra).values_list('id', flat = True)
+                idLivros = Livro.objects.filter(titulo__unaccent__contains = palavra).values_list('id', flat = True) #"CREATE EXTENSION unaccent;" no PostgreSQL para habilitar o filtro unaccent
                 self.idsRecuperados = set(self.idsRecuperados).intersection(idLivros)
 
         self.idsRecuperados = self.idsRecuperados[:self.qtdRecuperados]
@@ -84,17 +102,38 @@ class ProcessamentoUsuarios:
         for id in ids:
             self.idsSelecionados.append(id)
 
-    #def CarregarAvaliacaoPessoal(self):
+    def CarregarIdsNegados(self):
+        for idSelecionado in self.idsSelecionados:
+            idsPositivos = []
+            idsNegativos = PesquisaRecomendacao.objects.filter(selecionado__livro__id = idSelecionado).values_list('recomendado__id', flat = True)
+            for idRecomendado in idsNegativos:
 
-    #def CarregarAvaliacaoGlobal(self):
+                #Avaliações Pessoais (online)
+                likesPessoal = PesquisaRecomendacao.objects.filter(selecionado__pesquisa__usuario = self.usuario, selecionado__livro__id = idSelecionado, recomendado__id = idRecomendado, rating = 1).count()
+                dislikesPessoal = PesquisaRecomendacao.objects.filter(selecionado__pesquisa__usuario = self.usuario, selecionado__livro__id = idSelecionado, recomendado__id = idRecomendado, rating = 1).count()
+                totalPessoal = likes + dislikes
+                pesoPessoal = 0.7
+
+                #Avaliações Globais (offline)
+                likesGlobal = PesquisaRecomendacao.objects.filter(selecionado__livro__id = idSelecionado, recomendado__id = idRecomendado, rating = 1).count()
+                dislikesGlobal = PesquisaRecomendacao.objects.filter(selecionado__livro__id = idSelecionado, recomendado__id = idRecomendado, rating = 1).count()
+                totalGlobal = likes + dislikes
+                pesoGlobal = 0.3
+
+                avaliacaoTotal = ((dislikesPessoal / totalPessoal) * pesoPessoal) + ((dislikesGlobal / totalGlobal) * pesoGlobal)
+
+                #Se a avaliação total obtiver menos de 50%, o livro recomendado não entra no Blacklist
+                if avaliacaoTotal < 0.5:
+                    idsPositivos.append(idRecomendado)
+
+            ids = set(idsNegativos).intersection(idsPositivos)
+
+            self.idsBlackList((idSelecionado, ids))
 
     def CarregarRecomendados(self):
-        #self.CarregarAvaliacaoPessoal()
-        #self.CarregarAvaliacaoGlobal()
-
-        for id in self.idsSelecionados:
-            ids = procLivros.CalcularIdsLivrosMaisProximos(id, self.qtdRecomendados, self.idsNegados)
-            self.idsRecomendados.extend((id, ids)) #concatenando uma lista com outra
+        for idSelecionado, idsNegados in self.idsBlackList:
+            ids = self.CalcularIdsLivrosMaisProximos(idSelecionado, idsNegados)
+            self.idsRecomendados.append((idSelecionado, ids))
 
     def SelecionarRatings(self, ratigns):
         for r in ratigns:
@@ -120,5 +159,3 @@ class ProcessamentoUsuarios:
                 recomendacao = PesquisaRecomendacao.objects.order_by('-id').filter(selecionado = livroSelecionado, recomendado = livroRecomendado)[0]
                 recomendacao.ratign = self.ratingsRecomendados[i * self.qtdRecomendados + j]
                 recomendacao.save()
-
-    #def ProcessarPesquisa(self):
