@@ -4,7 +4,12 @@ from django.shortcuts import render
 from .models import Livro
 from .forms import PesquisaForm, ResultadoForm
 
+from usuario.libs import ProcessamentoUsuarios
+
 class PesquisaView(View):
+    #procUsuarios = ProcessamentoUsuarios(request.user.username, request.session.session_key)
+    #if not procUsuarios.msg:
+
     def get(self, request):
         if request.user.username == '':
             request.user.username = 'anônimo'

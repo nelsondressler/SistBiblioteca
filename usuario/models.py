@@ -5,11 +5,12 @@ from livro.models import Livro
 # Create your models here.
 class Usuario(models.Model):
     nome = models.CharField(max_length = 200)
-    email = models.EmailField()
+    email = models.EmailField(null = True, blank = True)
     login = models.CharField(max_length = 50)
-    senha = models.CharField(max_length = 50)
-    cpf = models.CharField(max_length = 13)
+    senha = models.CharField(max_length = 50, null = True, blank = True)
+    cpf = models.CharField(max_length = 13, null = True, blank = True)
     data_nascimento = models.DateField(null = True, blank = True)
+    sessao = models.IntegerField()
 
     def __str__(self):
         return self.nome
@@ -29,7 +30,9 @@ class Usuario(models.Model):
             models.Index(fields = ['cpf'], name = 'usuario_index_11'),
             models.Index(fields = ['-cpf'], name = 'usuario_index_12'),
             models.Index(fields = ['data_nascimento'], name = 'usuario_index_13'),
-            models.Index(fields = ['-data_nascimento'], name = 'usuario_index_14')
+            models.Index(fields = ['-data_nascimento'], name = 'usuario_index_14'),
+            models.Index(fields = ['sessao'], name = 'usuario_index_15'),
+            models.Index(fields = ['-sessao'], name = 'usuario_index_16')
         ]
 
 class Pesquisa(models.Model):

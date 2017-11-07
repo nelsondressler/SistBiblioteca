@@ -7,7 +7,7 @@ from django.utils.text import slugify
 
 from livro.models import Livro, Peso, Similaridade
 from stopword.models import Stopword
-from usuario.models import Usuario, PesquisaPalavraChave, Pesquisa, Recomendacao
+from usuario.models import Usuario, Pesquisa, PesquisaPalavraChave, PesquisaLivroSelecionado, PesquisaRecomendacao 
 
 import math
 import numpy as np
@@ -18,6 +18,11 @@ class ProcessamentoUsuarios:
     def __init__(self, usuario, sessao):
         self.sessao = sessao
         self.usuario = usuario
+        self.usuario = Usuario(nome = self.usuario, sessao = self.sessao)
+        self.pesquisa = Pesquisa(usuario = usuario)
+
+        self.CadastrarUsuario()
+        self.CadastrarPesquisa()
 
         self.qtdRecuperados = 30
         self.qtdRecomendados = 5
@@ -26,9 +31,9 @@ class ProcessamentoUsuarios:
 
         procLivros.AtualizarDados()
         if not procLivros.DadosCarregados():
-            msg = "Favor carregar dados referentes aos livros!"
+            self.msg = "Favor carregar dados referentes aos livros!"
         else:
-            procLivros.ProcessarDados()
+            self.procLivros.ProcessarDados()
 
         self.palavrasChave = []
         self.idsRecuperados = []
@@ -42,7 +47,12 @@ class ProcessamentoUsuarios:
         self.idsRatingGlobal = [] # (dislikes global / total global) por (livro selecionado x livro recomendado)
         self.idsNegados = []
 
-    #def AtualizarDados(self):
+    def CadastrarUsuario(self):
+        self.usuario.save()
+
+    def CadastrarPesquisa(self):
+         self.pesquisa.save()
+
     def CarregarPalavrasChaveBD(self, textoPesquisado):
         palavras = textoPesquisado.split(' ')
         stopwords = Stopword.objects.all()
@@ -53,7 +63,7 @@ class ProcessamentoUsuarios:
         palavras = [elemento.strip() for elemento in palavras if elemento not in stopwords]
 
         for p in palavras:
-            PesquisaPalavraChave.objects.get_or_create(nome = p)
+            PesquisaPalavraChave.objects.create(nome = p, pesquisa = self.pesquisa)
             self.palavrasChave.append(p)
 
     def PesquisarPalavraChave(self, textoPesquisado):
@@ -84,12 +94,31 @@ class ProcessamentoUsuarios:
 
         for id in self.idsSelecionados:
             ids = procLivros.CalcularIdsLivrosMaisProximos(id, self.qtdRecomendados, self.idsNegados)
-            self.idsRecomendados.extend(ids) #concatenando uma lista com outra
+            self.idsRecomendados.extend((id, ids)) #concatenando uma lista com outra
 
     def SelecionarRatings(self, ratigns):
         for r in ratigns:
             self.ratingsRecomendados.append(r)
 
-    #def CarregarSelecionadosBD(self):
-    #def CarregarRecomendadosBD(self):
-    #def CarregarRatingsBD(self):
+    def CarregarSelecionadosBD(self):
+        for id in self.idsSelecionados:
+            livro = Livro.objects.filter(id = id)
+            PesquisaLivroSelecionado.objects.create(livro = livro, pesquisa = self.pesquisa)
+
+    def CarregarRecomendadosBD(self):
+        for idSelecionado, ids in self.idsRecomendados:
+            livroSelecionado = PesquisaLivroSelecionado.objects.order_by('-id').filter(livro__id = idSelecionado)[:1]
+            for id in ids:
+                livroRecomendado = Livro.objects.filter(id = id)
+                PesquisaRecomendacao.objects.create(selecionado = livroSelecionado, recomendado = livroRecomendado)
+
+    def CarregarRatingsBD(self):
+        for i, (idSelecionado, ids) in enumerate(self.idsRecomendados):
+            livroSelecionado = PesquisaLivroSelecionado.objects.order_by('-id').filter(livro__id = idSelecionado)[:1]
+            for j, id in enumerate(ids):
+                livroRecomendado = Livro.objects.filter(id = id)
+                recomendacao = PesquisaRecomendacao.objects.order_by('-id').filter(selecionado = livroSelecionado, recomendado = livroRecomendado)[0]
+                recomendacao.ratign = self.ratingsRecomendados[i * self.qtdRecomendados + j]
+                recomendacao.save()
+
+    #def ProcessarPesquisa(self):
