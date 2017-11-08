@@ -1,42 +1,41 @@
 from django.db import models
 
+from django.utils.timezone import now
+
+from django.contrib.auth.models import AbstractUser
+#from django.contrib.auth.models import (AbstractBaseUser, PermissionsMixin, BaseUserManager)
+
 from livro.models import Livro
 
+from .managers import UserManager
+
 # Create your models here.
-class Usuario(models.Model):
-    nome = models.CharField(max_length = 200)
-    email = models.EmailField(null = True, blank = True)
-    login = models.CharField(max_length = 50)
-    senha = models.CharField(max_length = 50, null = True, blank = True)
-    cpf = models.CharField(max_length = 13, null = True, blank = True)
-    data_nascimento = models.DateField(null = True, blank = True)
-    sessao = models.IntegerField()
+class Usuario(AbstractUser):
+    username = models.CharField(unique = True, max_length = 50)
+    first_name = models.CharField(max_length = 50)
+    last_name = models.CharField(max_length = 50)
+    email = models.EmailField(unique = True, max_length = 50)
+    is_verified = models.BooleanField(default = False)
+    is_staff = models.BooleanField(default = False)
+    is_active = models.BooleanField(default = False)
+    date_joined = models.DateTimeField(default = now)
+
+    #objects = BaseUserManager()
+    objects = UserManager()
+
+    USERNAME_FIELD = 'username'
 
     def __str__(self):
-        return self.nome
+        return self.username
 
     class meta:
         indexes = [
-            models.Index(fields = ['id'], name = 'usuario_index_1'),
-            models.Index(fields = ['-id'], name = 'usuario_index_2'),
-            models.Index(fields = ['nome'], name = 'usuario_index_3'),
-            models.Index(fields = ['-nome'], name = 'usuario_index_4'),
-            models.Index(fields = ['email'], name = 'usuario_index_5'),
-            models.Index(fields = ['-email'], name = 'usuario_index_6'),
-            models.Index(fields = ['login'], name = 'usuario_index_7'),
-            models.Index(fields = ['-login'], name = 'usuario_index_8'),
-            models.Index(fields = ['senha'], name = 'usuario_index_9'),
-            models.Index(fields = ['-senha'], name = 'usuario_index_10'),
-            models.Index(fields = ['cpf'], name = 'usuario_index_11'),
-            models.Index(fields = ['-cpf'], name = 'usuario_index_12'),
-            models.Index(fields = ['data_nascimento'], name = 'usuario_index_13'),
-            models.Index(fields = ['-data_nascimento'], name = 'usuario_index_14'),
-            models.Index(fields = ['sessao'], name = 'usuario_index_15'),
-            models.Index(fields = ['-sessao'], name = 'usuario_index_16')
+
         ]
+Usuario.groups.related_name = 'user_group'
 
 class Pesquisa(models.Model):
-    data = models.DateTimeField(auto_now = True)
+    data = models.DateTimeField(default = now)
     usuario = models.ForeignKey(Usuario, models.CASCADE)
 
     class meta:
@@ -81,7 +80,7 @@ class PesquisaRecomendacao(models.Model):
     selecionado = models.ForeignKey(PesquisaLivroSelecionado, models.CASCADE)
     recomendado = models.ForeignKey(Livro, models.CASCADE, verbose_name='Livro recomendado')
     rating = models.BooleanField(default = True)
-    data = models.DateTimeField(auto_now = True)
+    data = models.DateTimeField(default = now)
 
     class meta:
         indexes = [

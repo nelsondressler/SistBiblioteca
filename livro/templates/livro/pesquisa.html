@@ -10,12 +10,16 @@
     <p>Obs: Caso algum livro não seja encontrado, favor ignorar o mesmo, pois os livros se limitam à sua disponibilidade no banco de dados da biblioteca.</p>
   </div>
 
-  <form class="" action="index.html" method="post">
+  <form class="" action="pesquisa.html" method="post">
     {% csrf_token %}
-    {{livro_form.titulo}}
+    {{pesquisa_form.titulo}}
+    {{pesquisa_form.pesquisa_id}}
     <input type="submit" name="" value="Buscar">
   </form>
 
-  {% block resultado %}
+  {% block selecao %}
+  {% endblock %}
+
+  {% block recomendacao %}
   {% endblock %}
 {% endblock %}

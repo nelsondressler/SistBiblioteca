@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+
+    <title>Bibinterativa - Pesquisa de Livros</title>
+
+    <link rel="stylesheet" href="css/modelo.css">
+  </head>
+  <body>
+    <label id="lblUsuario">Usuário: {{procUsuarios.usuario}}</label>
+    <label id="lblUsuario">Sessão: {{procUsuarios.sessao}}</label>
+
+    <h1>Pesquisa de Livros</h1>
+
+    <div class="">
+      <p>Olá {{username}}, favor preencher com os livros que já foram lidos até o momento</p>
+      <p>Obs: Caso algum livro não seja encontrado, favor ignorar o mesmo, pois os livros se limitam à sua disponibilidade no banco de dados da biblioteca.</p>
+    </div>
+
+    <div class="">
+      <form class="" action="modelo.html" method="post">
+        <label id="lblPesquisa" for="txtPesquisa" name="lblPesquisa"></label>
+        <input type="text" id="txtPesquisa" name="txtPesquisa" value="">
+        <input type="submit" name="" value="Pesquisar">
+      </form>
+    </div>
+
+    <form class="" action="modelo.html" method="post">
+      <div class="">
+        <ul id="listaRecuperados">
+        <li id="opLivroRecuperado_id" name="opLivroRecuperado_id">titulo</li>
+        <li id="opLivroRecuperado_id" name="opLivroRecuperado_id">titulo</li>
+        <li id="opLivroRecuperado_id" name="opLivroRecuperado_id">titulo</li>
+        <li id="opLivroRecuperado_id" name="opLivroRecuperado_id">titulo</li>
+        <li id="opLivroRecuperado_id" name="opLivroRecuperado_id">titulo</li>
+        <li id="opLivroRecuperado_id" name="opLivroRecuperado_id">titulo</li>
+        <li id="opLivroRecuperado_id" name="opLivroRecuperado_id">titulo</li>
+        <li id="opLivroRecuperado_id" name="opLivroRecuperado_id">titulo</li>
+        <li id="opLivroRecuperado_id" name="opLivroRecuperado_id">titulo</li>
+        <li id="opLivroRecuperado_id" name="opLivroRecuperado_id">titulo</li>
+        </ul>
+      </div>
+
+      <input type="submit" name="" value="Selecionar">
+    </form>
+
+
+    <form class="" action="modelo.html" method="post">
+      <div class="">
+        <ul id="listaRecuperados">
+        <li id="opLivroSelecionado_id" name="opLivroSelecionado_id">titulo</li>
+        <li id="opLivroSelecionado_id" name="opLivroSelecionado_id">titulo</li>
+        <li id="opLivroSelecionado_id" name="opLivroSelecionado_id">titulo</li>
+        <li id="opLivroSelecionado_id" name="opLivroSelecionado_id">titulo</li>
+        <li id="opLivroSelecionado_id" name="opLivroSelecionado_id">titulo</li>
+        <li id="opLivroSelecionado_id" name="opLivroSelecionado_id">titulo</li>
+        <li id="opLivroSelecionado_id" name="opLivroSelecionado_id">titulo</li>
+        <li id="opLivroSelecionado_id" name="opLivroSelecionado_id">titulo</li>
+        <li id="opLivroSelecionado_id" name="opLivroSelecionado_id">titulo</li>
+        <li id="opLivroSelecionado_id" name="opLivroSelecionado_id">titulo</li>
+        </ul>
+      </div>
+
+      <input type="submit" name="" value="Enviar">
+    </form>
+
+    <form class="" action="modelo.html" method="post">
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>TÍTULO</th>
+            <th>AUTOR(ES)</th>
+            <th>EDITORA</th>
+            <th>ANO PUBLICAÇÃO</th>
+            <th>GOSTEI</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td> <input type="checkbox" name="cbxRating_id" checked> </td>
+          </tr>
+          <tr>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td> <input type="checkbox" name="cbxRating_id" checked> </td>
+          </tr>
+          <tr>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td> <input type="checkbox" name="cbxRating_id" checked> </td>
+          </tr>
+          <tr>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td> <input type="checkbox" name="cbxRating_id" checked> </td>
+          </tr>
+          <tr>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td> <input type="checkbox" name="cbxRating_id" checked> </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <input type="submit" name="" value="Avaliar">
+    </form>
+
+  </body>
+</html>

@@ -1,42 +1,127 @@
 from django.views.generic import View
 from django.shortcuts import render
 
-from .models import Livro
-from .forms import PesquisaForm, ResultadoForm
+from livro.models import Livro, Peso, Similaridade
+from stopword.models import Stopword
+from usuario.models import Usuario, Pesquisa, PesquisaPalavraChave, PesquisaLivroSelecionado, PesquisaRecomendacao
 
-from usuario.libs import ProcessamentoUsuarios
+from .forms import PesquisaForm, SelecaoForm, RecomendacaoForm
+
+import sys
+import os
+
+from django.utils.text import slugify
 
 class PesquisaView(View):
-    #procUsuarios = ProcessamentoUsuarios(request.user.username, request.session.session_key)
-    #if not procUsuarios.msg:
+    def CarregarPalavrasChaveBD(self, textoPesquisado):
+        palavras = textoPesquisado.split(' ')
+        stopwords = Stopword.objects.all()
+
+        palavras = [slugify(elemento) for elemento in palavras]
+        stopwords = [slugify(elemento) for elemento in stopwords]
+
+        palavras = [elemento.strip() for elemento in palavras if elemento not in stopwords]
+
+        palavrasChave = []
+
+        for p in palavras:
+            #PesquisaPalavraChave.objects.create(nome = p, pesquisa = self.pesquisa)
+            palavrasChave.append(p)
+
+        return palavrasChave
+
+    def PesquisarPalavraChave(self, palavrasChave):
+        for i, palavra in enumerate(palavrasChave):
+            if i == 0:
+                livrosRecuperados = Livro.objects.filter(titulo__unaccent__icontains = palavra) #"CREATE EXTENSION unaccent;" no PostgreSQL para habilitar o filtro unaccent
+            else:
+                livros = Livro.objects.filter(titulo__unaccent__icontains = palavra) #"CREATE EXTENSION unaccent;" no PostgreSQL para habilitar o filtro unaccent
+                livrosRecuperados = set(livrosRecuperados).intersection(livros)
+
+        return livrosRecuperados
 
     def get(self, request):
-        if request.user.username == '':
-            request.user.username = 'anônimo'
-
         pesquisa = PesquisaForm()
-        return render(request, 'livro/index.html', {
-            'livro_form': pesquisa,
+
+        return render(request, 'livro/pesquisa.html', {
+            'pesquisa_form': pesquisa
             'username': request.user.username
         })
 
     def post(self, request):
-        pesquisa = PesquisaForm(request.POST)
-
-        if request.user.username == '':
-            request.user.username = 'anônimo'
+        pesquisa = PesquisaForm(request.POST or None)
 
         if pesquisa.is_valid():
-            livros = Livro.objects.filter(titulo__icontains = pesquisa.cleaned_data['titulo']).order_by('id')
+            titulo = pesquisa.cleaned_data['titulo']
 
-            return render(request, 'livro/resultado.html', {
-                'livro_form': pesquisa,
-                'resultado_form': ResultadoForm(),
-                'livros' : livros,
+            u = Usuario.objects.first() #request.user
+            p = Pesquisa(usuario = u)
+            #p.save()
+
+            #Salvando as palavras-chave
+            palavrasChave = self.CarregarPalavrasChaveBD(titulo)
+
+            #Gerando a lista de recuperação
+            livrosRecuperados = self.PesquisarPalavraChave(palavrasChave)
+
+            return render(request, 'livro/selecao.html', {
+                'pesquisa_form': pesquisa,
+                'selecao_form': SelecaoForm(),
+                'livros_recuperados' : livrosRecuperados,
                 'username': request.user.username
             })
         else:
             pass
 
-class ResultadoView(View):
-    pass
+class SelecaoView(View):
+    def post(self, request):
+        pesquisa = PesquisaForm(request.POST or None)
+        selecao = SelecaoForm(request.POST or None)
+
+        if pesquisa.is_valid() and selecao.is_valid():
+            titulo = pesquisa.cleaned_data['pesquisa_titulo']
+            pesquisa_id = pesquisa.cleaned_data['pesquisa_id']
+
+            u = Usuario.objects.first() #request.user
+            p = pesquisa_id
+
+            livrosRecuperados = livros_recuperados
+            #livrosSelecionados = selecao.cleaned_data['livros_selecionados']
+            livrosSelecionados = []
+            livrosRecomendados = []
+
+            #Salvando selecionados
+            #Calculando recomendados
+
+            for livro in livrosRecuperados:
+                if livro.id in livrosSelecionados:
+                    livro.checked = True
+                else:
+                    livro.checked = False
+
+            return render(request, 'livro/recomendacao.html', {
+                #'pesquisa_form': pesquisa,
+                'selecao_form': SelecaoForm(livrosSelecionados, titulo, pesquisa_id),
+                'recomendacao_form': RecomendacaoForm(livrosRecomendados, titulo, pesquisa_id, livrosSelecionados),
+                'livros_selecionados': livrosSelecionados,
+                'livros_recomendados': livrosRecomendados,
+                'username': request.user.username
+            })
+        else:
+            pass
+
+class RecomendacaoView(View):
+    def post(self, request):
+        #pesquisa = PesquisaForm(request.POST or None)
+        selecao = SelecaoForm(request.POST or None)
+        recomendacao = RecomendacaoForm(request.POST or None)
+
+        if pesquisa.is_valid() and selecao.is_valid() and recomendacao.is_valid():
+            u = Usuario.objects.first() #request.user
+            #p = pesquisa_id
+
+            #Salvando avaliação
+
+            return render(request, 'livro/avaliacao.html')
+        else:
+            pass

@@ -13,18 +13,15 @@ import math
 import numpy as np
 
 class ProcessamentoUsuarios:
-    def __init__(self, usuario, sessao):
+    def __init__(self, usuario):
         self.qtdTotalDocs = 0
         self.qtdTotalTermos = 0
         self.qtdTotalPesos = 0
         self.qtdTotalSimilaridades = 0
 
-        self.sessao = sessao
         self.usuario = usuario
-        self.usuario = Usuario(nome = self.usuario, sessao = self.sessao)
         self.pesquisa = Pesquisa(usuario = usuario)
 
-        self.CadastrarUsuario()
         self.CadastrarPesquisa()
 
         self.qtdRecuperados = 30
@@ -54,15 +51,15 @@ class ProcessamentoUsuarios:
         return True
 
     def RecuperarLivrosMaisProximos(self, id, idsNegados):
-        livros = Livro.objects.filter(id__in = ids).exclude(livro_j__id = id).order_by('-valor')[:self.qtdRecomendados]
+        livros = Livro.objects.filter(id__in = ids).exclude(livro_j__id = id).exclude(livro_j__id in idsNegados).order_by('-valor')[:self.qtdRecomendados]
         return livros
 
     def RecuperarIdsLivrosMaisProximos(self, id, idsNegados):
-        ids = Similaridade.objects.filter(livro_i__id = id).exclude(livro_j__id = id).order_by('-valor').values_list('livro_j__id', flat = True)[:self.qtdRecomendados]
+        ids = Similaridade.objects.filter(livro_i__id = id).exclude(livro_j__id = id).exclude(livro_j__id in idsNegados).order_by('-valor').values_list('livro_j__id', flat = True)[:self.qtdRecomendados]
         return ids
 
     def RecuperarValoresLivrosMaisProximos(self, id, idsNegados = []):
-        valores = Similaridade.objects.filter(livro_i__id = id).exclude(livro_j__id = id).exclude(livro_j__id__in = idsNegados).order_by('-valor').values_list('valor', flat = True)[:self.qtdRecomendados]
+        valores = Similaridade.objects.filter(livro_i__id = id).exclude(livro_j__id = id).exclude(livro_j__id__in in idsNegados).order_by('-valor').values_list('valor', flat = True)[:self.qtdRecomendados]
         return valores
 
     def CadastrarUsuario(self):
@@ -91,9 +88,9 @@ class ProcessamentoUsuarios:
 
         for i, palavra in enumerate(self.palavrasChave):
             if i == 0:
-                self.idsRecuperados = Livro.objects.filter(titulo__unaccent__contains = palavra).values_list('id', flat = True) #"CREATE EXTENSION unaccent;" no PostgreSQL para habilitar o filtro unaccent
+                self.idsRecuperados = Livro.objects.filter(titulo__unaccent__icontains = palavra).values_list('id', flat = True) #"CREATE EXTENSION unaccent;" no PostgreSQL para habilitar o filtro unaccent
             else:
-                idLivros = Livro.objects.filter(titulo__unaccent__contains = palavra).values_list('id', flat = True) #"CREATE EXTENSION unaccent;" no PostgreSQL para habilitar o filtro unaccent
+                idLivros = Livro.objects.filter(titulo__unaccent__icontains = palavra).values_list('id', flat = True) #"CREATE EXTENSION unaccent;" no PostgreSQL para habilitar o filtro unaccent
                 self.idsRecuperados = set(self.idsRecuperados).intersection(idLivros)
 
         self.idsRecuperados = self.idsRecuperados[:self.qtdRecuperados]
@@ -109,8 +106,8 @@ class ProcessamentoUsuarios:
             for idRecomendado in idsNegativos:
 
                 #Avaliações Pessoais (online)
-                likesPessoal = PesquisaRecomendacao.objects.filter(selecionado__pesquisa__usuario = self.usuario, selecionado__livro__id = idSelecionado, recomendado__id = idRecomendado, rating = 1).count()
-                dislikesPessoal = PesquisaRecomendacao.objects.filter(selecionado__pesquisa__usuario = self.usuario, selecionado__livro__id = idSelecionado, recomendado__id = idRecomendado, rating = 1).count()
+                likesPessoal = PesquisaRecomendacao.objects.filter(selecionado__pesquisa__usuario = self.usuario, selecionado__livro__id = idSelecionado, recomendado__id = idRecomendado, rating = True).count()
+                dislikesPessoal = PesquisaRecomendacao.objects.filter(selecionado__pesquisa__usuario = self.usuario, selecionado__livro__id = idSelecionado, recomendado__id = idRecomendado, rating = False).count()
                 totalPessoal = likes + dislikes
                 pesoPessoal = 0.7
 
