@@ -1,4 +1,6 @@
 from django.views.generic import View
+
+from django.http import HttpResponse
 from django.shortcuts import render
 
 from livro.models import Livro, Peso, Similaridade
@@ -44,25 +46,28 @@ class PesquisaView(View):
         pesquisa = PesquisaForm()
 
         return render(request, 'livro/pesquisa.html', {
-            'pesquisa_form': pesquisa
+            'pesquisa_form': pesquisa,
             'username': request.user.username
         })
 
     def post(self, request):
-        pesquisa = PesquisaForm(request.POST or None)
+        pesquisa = PesquisaForm(request.POST)
 
         if pesquisa.is_valid():
-            titulo = pesquisa.cleaned_data['titulo']
+            usr = Usuario.objects.first() #request.user
+            psq = Pesquisa(usuario = usr)
+            psq.save()
 
-            u = Usuario.objects.first() #request.user
-            p = Pesquisa(usuario = u)
-            #p.save()
+            pesquisa.cleaned_data['pesquisa_id'] = psq.id
 
             #Salvando as palavras-chave
+            titulo = pesquisa.cleaned_data['titulo']
             palavrasChave = self.CarregarPalavrasChaveBD(titulo)
 
             #Gerando a lista de recuperação
             livrosRecuperados = self.PesquisarPalavraChave(palavrasChave)
+
+            #import pdb; pdb.set_trace()
 
             return render(request, 'livro/selecao.html', {
                 'pesquisa_form': pesquisa,
@@ -71,7 +76,7 @@ class PesquisaView(View):
                 'username': request.user.username
             })
         else:
-            pass
+            return HttpResponse('Erro em Pesquisa')
 
 class SelecaoView(View):
     def post(self, request):
@@ -82,12 +87,8 @@ class SelecaoView(View):
             titulo = pesquisa.cleaned_data['pesquisa_titulo']
             pesquisa_id = pesquisa.cleaned_data['pesquisa_id']
 
-            u = Usuario.objects.first() #request.user
-            p = pesquisa_id
-
             livrosRecuperados = livros_recuperados
-            #livrosSelecionados = selecao.cleaned_data['livros_selecionados']
-            livrosSelecionados = []
+            livrosSelecionados = selecao.cleaned_data['livros_selecionados']
             livrosRecomendados = []
 
             #Salvando selecionados
@@ -100,7 +101,7 @@ class SelecaoView(View):
                     livro.checked = False
 
             return render(request, 'livro/recomendacao.html', {
-                #'pesquisa_form': pesquisa,
+                'pesquisa_form': pesquisa,
                 'selecao_form': SelecaoForm(livrosSelecionados, titulo, pesquisa_id),
                 'recomendacao_form': RecomendacaoForm(livrosRecomendados, titulo, pesquisa_id, livrosSelecionados),
                 'livros_selecionados': livrosSelecionados,
@@ -108,18 +109,15 @@ class SelecaoView(View):
                 'username': request.user.username
             })
         else:
-            pass
+            return HttpResponse('Erro em Seleção')
 
 class RecomendacaoView(View):
     def post(self, request):
-        #pesquisa = PesquisaForm(request.POST or None)
+        pesquisa = PesquisaForm(request.POST or None)
         selecao = SelecaoForm(request.POST or None)
         recomendacao = RecomendacaoForm(request.POST or None)
 
         if pesquisa.is_valid() and selecao.is_valid() and recomendacao.is_valid():
-            u = Usuario.objects.first() #request.user
-            #p = pesquisa_id
-
             #Salvando avaliação
 
             return render(request, 'livro/avaliacao.html')

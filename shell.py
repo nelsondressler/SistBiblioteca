@@ -34,3 +34,15 @@ if not procLivros.qtdTotalSimilaridades:
     procLivros.CarregarSimilaridadesBD()
 else:
     procLivros.RecuperarMatrizSimilaridades()
+
+
+procUsuarios = ProcessamentoUsuarios(usuario)
+procUsuarios.CadastrarUsuario()
+procUsuarios.CadastrarPesquisa()
+procUsuarios.PesquisarPalavraChave('seu texto de pesquisa')
+procUsuarios.SelecionarLivros([12, 3, 4, ...]) #lista inteira dos ids retornados da pesquisa
+procUsuarios.CarregarIdsNegados()
+procUsuarios.CarregarRecomendados()
+procUsuarios.ApresentarRecomendados()
+procUsuarios.SelecionarRatings([1, 0, 1, ...]) #lista inteira dos ratings pra cada livro recomendado
+....
