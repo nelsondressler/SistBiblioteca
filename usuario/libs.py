@@ -80,15 +80,15 @@ class ProcessamentoUsuarios:
          print('Login: ' + self.usuario.username)
 
     def RecuperarLivrosMaisProximos(self, id, idsNegados):
-        livros = Livro.objects.filter(id__in = ids).exclude(livro_j__id = id).exclude(livro_j__id in idsNegados).order_by('-valor')[:self.qtdRecomendados]
+        livros = Livro.objects.filter(id__in = ids).exclude(livro_j__id = id).exclude(livro_j__id__in = self.idsSelecionados).exclude(livro_j__id__in = idsNegados).order_by('-valor')[:self.qtdRecomendados]
         return livros
 
     def RecuperarIdsLivrosMaisProximos(self, id, idsNegados):
-        ids = Similaridade.objects.filter(livro_i__id = id).exclude(livro_j__id = id).exclude(livro_j__id__in = idsNegados).order_by('-valor').values_list('livro_j__id', flat = True)[:self.qtdRecomendados]
+        ids = Similaridade.objects.filter(livro_i__id = id).exclude(livro_j__id = id).exclude(livro_j__id__in = self.idsSelecionados).exclude(livro_j__id__in = idsNegados).order_by('-valor').values_list('livro_j__id', flat = True)[:self.qtdRecomendados]
         return ids
 
     def RecuperarValoresLivrosMaisProximos(self, id, idsNegados = []):
-        valores = Similaridade.objects.filter(livro_i__id = id).exclude(livro_j__id = id).exclude(livro_j__id__in = idsNegados).order_by('-valor').values_list('valor', flat = True)[:self.qtdRecomendados]
+        valores = Similaridade.objects.filter(livro_i__id = id).exclude(livro_j__id = id).exclude(livro_j__id__in = self.idsSelecionados).exclude(livro_j__id__in = idsNegados).order_by('-valor').values_list('valor', flat = True)[:self.qtdRecomendados]
         return valores
 
     def CarregarPalavrasChaveBD(self, textoPesquisado):
@@ -134,6 +134,7 @@ class ProcessamentoUsuarios:
 
     def CarregarRecomendados(self):
         #self.CarregarIdsNegados()
+        self.idsRecomendados = []
         self.idsBlackList = []
         idsNegados =[]
 
@@ -257,6 +258,7 @@ class ProcessamentoUsuarios:
         self.CarregarRecomendados()
         self.CarregarRecomendadosBD()
         self.ApresentarLivrosRecomendados()
+        self.LimparSelecao()
 
     def ExplorarLivro(self, id):
         livro = Livro.objects.get(id = id)
@@ -272,9 +274,11 @@ class ProcessamentoUsuarios:
     def EnviarRatings(self, ratings):
         self.ratingsRecomendados = []
 
-        idsSelecionados, idsRecomendados = self.idsRecomendados
+        qtdRecomendados = 0
+        for idsSelecionados, idsRecomendados in self.idsRecomendados:
+            qtdRecomendados = qtdRecomendados + len(idsRecomendados)
 
-        if len(rating) == len(idsRecomendados):
+        if len(ratings) == qtdRecomendados:
             for r in ratings:
                 self.ratingsRecomendados.append(r)
 
@@ -289,4 +293,4 @@ class ProcessamentoUsuarios:
             print('Nova pesquisa?')
 
         else:
-            print('[Erro] O número de ratings não corresponde aos livros recomendados. Favor avaliar novamente.')
+            print('[Erro] O número de ratings não corresponde a quantidade de livros recomendados. Favor avaliar novamente.')
