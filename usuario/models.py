@@ -28,15 +28,14 @@ class Usuario(AbstractUser):
     def __str__(self):
         return self.username
 
-    class meta:
-        indexes = [
-
-        ]
 Usuario.groups.related_name = 'user_group'
 
 class Pesquisa(models.Model):
     data = models.DateTimeField(default = now)
     usuario = models.ForeignKey(Usuario, models.CASCADE)
+
+    def __str__(self):
+        return self.usuario.username
 
     class meta:
         indexes = [
@@ -52,6 +51,9 @@ class PesquisaPalavraChave(models.Model):
     nome = models.CharField(max_length = 200)
     pesquisa = models.ForeignKey(Pesquisa, models.CASCADE)
 
+    def __str__(self):
+        return self.nome
+
     class meta:
         indexes = [
             models.Index(fields = ['id'], name = 'pesquisa_pc_index_1'),
@@ -65,6 +67,9 @@ class PesquisaPalavraChave(models.Model):
 class PesquisaLivroSelecionado(models.Model):
     livro = models.ForeignKey(Livro, models.CASCADE)
     pesquisa = models.ForeignKey(Pesquisa, models.CASCADE)
+
+    def __str__(self):
+        return self.livro.titulo
 
     class meta:
         indexes = [
@@ -81,6 +86,9 @@ class PesquisaRecomendacao(models.Model):
     recomendado = models.ForeignKey(Livro, models.CASCADE, verbose_name='Livro recomendado')
     rating = models.BooleanField(default = True)
     data = models.DateTimeField(default = now)
+
+    def __str__(self):
+        return self.recomendado.titulo
 
     class meta:
         indexes = [
