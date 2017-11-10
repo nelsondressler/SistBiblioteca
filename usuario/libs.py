@@ -53,12 +53,18 @@ class ProcessamentoUsuarios:
 
         return True
 
-    def CadastrarUsuario(self):
+    def UsuarioExistente(self):
         qtdUsuarios = Usuario.objects.filter(username = self.usuario.username).count()
 
+        if qtdUsuarios:
+            return True
+
+        return False
+
+    def CadastrarUsuario(self):
         print('\n')
 
-        if qtdUsuarios:
+        if self.UsuarioExistente():
             self.usuario = Usuario.objects.filter(username = self.usuario.username)[0]
             print('Usuário selecionado:')
         else:
@@ -209,6 +215,8 @@ class ProcessamentoUsuarios:
 #-----------------------------------------------------------------------------------------------------------------------
 
     def PesquisarPalavraChave(self, textoPesquisado):
+        resultado = False
+
         self.CadastrarPesquisa()
 
         print('Campo pesquisa: ' + textoPesquisado)
@@ -228,17 +236,27 @@ class ProcessamentoUsuarios:
 
         self.ApresentarLivrosRecuperados()
 
+        if self.idsRecuperados:
+            resultado = True
+
+        return resultado
+
     def SelecionarLivros(self, ids):
+        selecionado = False
+
         for id in ids:
             if id in self.idsRecuperados:
                 if id not in self.idsSelecionados:
                     self.idsSelecionados.append(id)
+                    selecionado = True
                 else:
                     print('[Erro] O ID ' + str(id) + ' já aparece na lista de seleção.')
             else:
                 print('[Erro] O ID ' + str(id) + ' não apareceu no resultado da pesquisa. Favor colocar um ID válido.')
 
         self.ApresentarLivrosSelecionados()
+
+        return selecionado
 
     def DesmarcarLivros(self, ids):
         for id in ids:
@@ -251,7 +269,6 @@ class ProcessamentoUsuarios:
 
     def LimparSelecao(self):
         self.idsSelecionados = []
-        self.ApresentarLivrosSelecionados()
 
     def EnviarLivrosSelecionados(self):
         self.CarregarSelecionadosBD()
@@ -274,6 +291,8 @@ class ProcessamentoUsuarios:
     def EnviarRatings(self, ratings):
         self.ratingsRecomendados = []
 
+        avaliado = False
+
         qtdRecomendados = 0
         for idsSelecionados, idsRecomendados in self.idsRecomendados:
             qtdRecomendados = qtdRecomendados + len(idsRecomendados)
@@ -291,6 +310,9 @@ class ProcessamentoUsuarios:
             print('Avaliação recebida com sucesso! Muito obrigado pela sua colaboração...')
             print('\n')
             print('Nova pesquisa?')
+            avaliado = True
 
         else:
             print('[Erro] O número de ratings não corresponde a quantidade de livros recomendados. Favor avaliar novamente.')
+
+        return avaliado
