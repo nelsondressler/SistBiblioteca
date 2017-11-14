@@ -23,7 +23,7 @@ class PesquisaAdmin(admin.ModelAdmin):
 
 class PesquisaPalavraChaveAdmin(admin.ModelAdmin):
     list_display = ['id', 'nome', 'pesquisa'] # campos de apresentação
-    list_display_links = ['id', 'nome', 'pesquisa'] # campos habilitados para links
+    list_display_links = ['id', 'pesquisa', 'nome'] # campos habilitados para links
     search_fields = ['nome'] # campos de busca
     raw_id_fields = [] # campos de chave estrangeira (processamento de relacionamento)
 
@@ -32,7 +32,7 @@ class PesquisaPalavraChaveAdmin(admin.ModelAdmin):
 
 class PesquisaLivroSelecionadoAdmin(admin.ModelAdmin):
     list_display = ['id', 'livro', 'pesquisa'] # campos de apresentação
-    list_display_links = ['id', 'livro', 'pesquisa'] # campos habilitados para links
+    list_display_links = ['id', 'pesquisa', 'livro'] # campos habilitados para links
     search_fields = ['livro'] # campos de busca
     raw_id_fields = [] # campos de chave estrangeira (processamento de relacionamento)
 

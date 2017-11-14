@@ -53,8 +53,8 @@ class ProcessamentoUsuarios:
 
         return True
 
-    def UsuarioExistente(self):
-        qtdUsuarios = Usuario.objects.filter(username = self.usuario.username).count()
+    def UsuarioExistente(self, username):
+        qtdUsuarios = Usuario.objects.filter(username = username).count()
 
         if qtdUsuarios:
             return True
@@ -64,7 +64,7 @@ class ProcessamentoUsuarios:
     def CadastrarUsuario(self):
         print('\n')
 
-        if self.UsuarioExistente():
+        if self.UsuarioExistente(self.usuario.username):
             self.usuario = Usuario.objects.filter(username = self.usuario.username)[0]
             print('Usuário selecionado:')
         else:
@@ -119,13 +119,13 @@ class ProcessamentoUsuarios:
                 #Avaliações Pessoais (online)
                 likesPessoal = PesquisaRecomendacao.objects.filter(selecionado__pesquisa__usuario = self.usuario, selecionado__livro__id = idSelecionado, recomendado__id = idRecomendado, rating = True).count()
                 dislikesPessoal = PesquisaRecomendacao.objects.filter(selecionado__pesquisa__usuario = self.usuario, selecionado__livro__id = idSelecionado, recomendado__id = idRecomendado, rating = False).count()
-                totalPessoal = likes + dislikes
+                totalPessoal = likesPessoal + dislikesPessoal
                 pesoPessoal = 0.7
 
                 #Avaliações Globais (offline)
                 likesGlobal = PesquisaRecomendacao.objects.filter(selecionado__livro__id = idSelecionado, recomendado__id = idRecomendado, rating = 1).count()
                 dislikesGlobal = PesquisaRecomendacao.objects.filter(selecionado__livro__id = idSelecionado, recomendado__id = idRecomendado, rating = 1).count()
-                totalGlobal = likes + dislikes
+                totalGlobal = likesGlobal + dislikesGlobal
                 pesoGlobal = 0.3
 
                 avaliacaoTotal = ((dislikesPessoal / totalPessoal) * pesoPessoal) + ((dislikesGlobal / totalGlobal) * pesoGlobal)
@@ -217,6 +217,8 @@ class ProcessamentoUsuarios:
     def PesquisarPalavraChave(self, textoPesquisado):
         resultado = False
 
+        self.pesquisa = Pesquisa(usuario = self.usuario)
+
         self.CadastrarPesquisa()
 
         print('Campo pesquisa: ' + textoPesquisado)
@@ -281,6 +283,7 @@ class ProcessamentoUsuarios:
         livro = Livro.objects.get(id = id)
         print('\n')
         print('ID: ' + str(livro.id))
+        print('ISBN: ' + str(livro.isbn))
         print('Título: ' + livro.titulo)
         print('Autor(es): ' + livro.autor)
         print('Editora: ' + livro.editora)
