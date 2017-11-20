@@ -1,10 +1,7 @@
 {% extends "livro/pesquisa.html" %}
 
 {% block recomendacao %}
-  <form class="" action="pesquisa.html" method="post">
-    {% csrf_token %}
-
-    <p>Recomendados:</p>
+  <p>Recomendados:</p>
 
     {% for livro in livros_recomendados %}
       <label for="{{livro.id}}">[{{livro.id}}] {{livro.titulo}}</label>
@@ -12,6 +9,5 @@
       <br>
     {% endfor %}
 
-    <input type="submit" name="" value="Enviar">
-  </form>
+    <input type="submit" name="" value="Enviar" formaction="{% url 'livro:recomendacao' %}">
 {% endblock %}

@@ -1,0 +1,6 @@
+{% load i18n %}
+
+{% trans "Hello" %} {{ user.get_short_name }}!
+
+{% trans "To complete your registration access the following address:" %}
+{{ verification_url }}

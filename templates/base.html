@@ -10,6 +10,10 @@
   </head>
   <body>
     <div class="">
+			{% block login %}
+				<span class='signup'><a href="{% url 'signup' %}" >Cadastrar</a></span>
+				<span class='login'><a href="{% url 'login' %}" >Logar</a></span>
+			{% endblock %}
       {% block conteudo %}
       {% endblock %}
     </div>

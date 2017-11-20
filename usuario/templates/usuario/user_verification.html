@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+
+{% load i18n %}
+
+{% block conteudo %}
+<section class="container user user-signup-verification">
+    <div class="row">
+        <div class="twelve columns">
+            <h3>{% trans "Cadastro realizado com sucesso" %}</h3>
+            <p>
+                {% trans "A confirmation e-mail was sent to" %} <strong>{{ user.email }}</strong><br>
+            </p>
+            <p>
+                <a href="{% url 'user_profile_edit' %}?signup" class="button">
+                    {% trans "Continue" %}
+                </a>
+            </p>
+        </div>
+    </div>
+</section>
+{% endblock %}

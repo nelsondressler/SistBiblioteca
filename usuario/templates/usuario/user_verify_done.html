@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+
+{% block conteudo %}
+<section class="container user user-verify-done">
+    <div class="row">
+        <div class="offset-by-two eight columns">
+            <h3>{% trans "Email verified!" %}</h3>
+            <p>
+                <a href="{% url 'home' %}" class="button">
+                    {% trans "Continue" %}
+                </a>
+            </p>
+        </div>
+    </div>
+</section>
+{% endblock %}

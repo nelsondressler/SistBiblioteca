@@ -1,17 +1,13 @@
 {% extends "livro/pesquisa.html" %}
 
 {% block selecao %}
-  <form class="" action="pesquisa.html" method="post">
-    {% csrf_token %}
-
     <p>Resultados:</p>
 
     {% for livro in livros_recuperados %}
-      <input type="checkbox" id="{{livro.id}}" name="opcao[]" value="{{livro.id}}" {% if livro.checked %} checked="checked" {% endif %}>
+      <input type="checkbox" id="{{livro.id}}" name="livros_selecionados[]" value="{{livro.id}}" {% if livro.checked %} checked="checked" {% endif %}>
       <label for="{{livro.id}}">[{{livro.id}}] {{livro.titulo}}</label>
       <br>
     {% endfor %}
 
-    <input type="submit" name="" value="Selecionar">
-  </form>
+    <input type="submit" name="" value="Selecionar" formaction="{% url 'livro:selecao' %}">
 {% endblock %}

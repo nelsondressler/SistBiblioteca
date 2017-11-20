@@ -3,10 +3,13 @@ from django.db import models
 from django.utils.timezone import now
 
 from django.contrib.auth.models import AbstractUser
+from django.core.urlresolvers import reverse
+from django.utils.http import urlsafe_base64_encode
 #from django.contrib.auth.models import (AbstractBaseUser, PermissionsMixin, BaseUserManager)
-
+from django.utils.translation import ugettext_lazy as _
 from livro.models import Livro
-
+from .utils import send_template_mail, default_token_generator
+from django.utils.encoding import force_bytes
 from .managers import UserManager
 
 # Create your models here.
@@ -27,6 +30,25 @@ class Usuario(AbstractUser):
 
     def __str__(self):
         return self.username
+
+    def send_verification_mail(self, request):
+        if not self.pk:
+            self.save()
+
+        return send_template_mail(
+            _('Email verification'),
+            'usuario/user_verification_email.html',
+            {
+                'user': self,
+                'verification_url': request.build_absolute_uri(
+                    reverse('user_verify', kwargs={
+                    'uidb64': urlsafe_base64_encode(force_bytes(self.pk)),
+                    'token': default_token_generator.make_token(self)
+                    })
+                )
+            },
+            [self.email]
+        )
 
 Usuario.groups.related_name = 'user_group'
 

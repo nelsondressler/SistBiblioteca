@@ -46,8 +46,9 @@ class PesquisaView(View):
         pesquisa = PesquisaForm()
 
         return render(request, 'livro/pesquisa.html', {
-            'pesquisa_form': pesquisa,
-            'username': request.user.username
+            'form': pesquisa,
+            'username': request.user.username,
+            'pesquisa_id': None
         })
 
     def post(self, request):
@@ -55,23 +56,25 @@ class PesquisaView(View):
 
         if pesquisa.is_valid():
             usr = Usuario.objects.first() #request.user
-            psq = Pesquisa(usuario = usr)
-            psq.save()
+            psq = Pesquisa.objects.create(usuario = usr)
 
             pesquisa.cleaned_data['pesquisa_id'] = psq.id
 
             #Salvando as palavras-chave
-            titulo = pesquisa.cleaned_data['titulo']
+            titulo = pesquisa.cleaned_data['pesquisa_titulo']
             palavrasChave = self.CarregarPalavrasChaveBD(titulo)
 
             #Gerando a lista de recuperação
             livrosRecuperados = self.PesquisarPalavraChave(palavrasChave)
 
+            #Formulario será o próximo formulário sempre.
+            formulario = SelecaoForm(initial={'pesquisa_titulo': titulo, 'pesquisa_id': psq.id})
+
             #import pdb; pdb.set_trace()
 
             return render(request, 'livro/selecao.html', {
-                'pesquisa_form': pesquisa,
-                'selecao_form': SelecaoForm(),
+                'pesquisa_id': psq.id,
+                'form': formulario,
                 'livros_recuperados' : livrosRecuperados,
                 'username': request.user.username
             })
@@ -80,15 +83,14 @@ class PesquisaView(View):
 
 class SelecaoView(View):
     def post(self, request):
-        pesquisa = PesquisaForm(request.POST or None)
-        selecao = SelecaoForm(request.POST or None)
+        selecao = SelecaoForm(request.POST)
 
-        if pesquisa.is_valid() and selecao.is_valid():
-            titulo = pesquisa.cleaned_data['pesquisa_titulo']
-            pesquisa_id = pesquisa.cleaned_data['pesquisa_id']
+        if selecao.is_valid():
+            titulo = selecao.cleaned_data['pesquisa_titulo']
+            pesquisa_id = selecao.cleaned_data['pesquisa_id']
 
-            livrosRecuperados = livros_recuperados
             livrosSelecionados = selecao.cleaned_data['livros_selecionados']
+            livrosRecuperados = []#livros_recuperados #Precisa colocar valor nessa variavel.
             livrosRecomendados = []
 
             #Salvando selecionados
@@ -100,10 +102,11 @@ class SelecaoView(View):
                 else:
                     livro.checked = False
 
+            #Formulario será o próximo formulário sempre.
+            formulario = RecomendacaoForm(initial={'pesquisa_titulo': titulo, 'pesquisa_id': pesquisa_id, 'livros_selecionados': livrosSelecionados})
+
             return render(request, 'livro/recomendacao.html', {
-                'pesquisa_form': pesquisa,
-                'selecao_form': SelecaoForm(livrosSelecionados, titulo, pesquisa_id),
-                'recomendacao_form': RecomendacaoForm(livrosRecomendados, titulo, pesquisa_id, livrosSelecionados),
+                'form': formulario,
                 'livros_selecionados': livrosSelecionados,
                 'livros_recomendados': livrosRecomendados,
                 'username': request.user.username

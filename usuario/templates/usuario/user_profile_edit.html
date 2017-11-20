@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% load staticfiles i18n %}
+
+{% block conteudo %}
+<section class="user user-profile-edit container">
+    <h3>
+        {% if 'signup' in request.GET %}
+            {% trans "Tell us a bit more about yourself" %}
+        {% else %}
+            {% trans "Edit profile" %}
+        {% endif %}
+    </h3>
+
+    <div class="row">
+        <form class="offset-by-three six columns" action="." method="POST" enctype="multipart/form-data">
+            {% csrf_token %}
+            {{ user_form.as_p }}
+            {{ profile_form.as_p }}
+
+            {% if 'signup' in request.GET %}
+                <input type="hidden" name="signup" value="true">
+            {% endif %}
+
+            <input type="submit" value="{% trans 'Save' %}">
+        </form>
+    </div>
+</section>
+{% endblock %}

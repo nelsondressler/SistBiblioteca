@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block conteudo %}
+<section class="container user user-login">
+    <div class="row">
+        <h4>{% trans "Log in" %}</h4>
+    </div>
+    <div class="row">
+        <div class="offset-by-four four columns">
+            <form class="login-form" action="." method="POST">
+                {% csrf_token %}
+                {{ form.as_p }}
+
+                <p class="helper">
+                    <a href="{% url 'password_reset' %}">
+                        {% trans "Forgot my password" %}
+                    </a>
+                </p>
+                <p>
+                    <input type="submit" value="{% trans 'Log in' %}">
+                </p>
+            </form>
+        </div>
+    </div>
+</section>
+{% endblock %}

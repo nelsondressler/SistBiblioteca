@@ -87,14 +87,19 @@ WSGI_APPLICATION = 'bibinterativa.wsgi.application'
 #    }
 #}
 
+AUTHENTICATION_BACKENDS = (
+	'django.contrib.auth.backends.ModelBackend',
+	#'auth_user.backends.MultiEmailModelBackend',
+)
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'bibinterativa',
-        'USER': 'postgres',
-        'PASSWORD': 'root',
+        'USER': 'teste',
+        'PASSWORD': '123456',
         'HOST': 'localhost',
-        'PORT': '5432',
+        'PORT': '5433',
     }
 }
 

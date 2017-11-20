@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+
+{% load i18n %}
+
+{% block conteudo %}
+<section class="container user user-signup">
+
+    <div class="row">
+        <div class="offset-by-four four columns">
+            <form class="signup-form" action="." method="POST">
+                {% csrf_token %}
+                <input type="hidden" name="next" value="{{ request.GET.next }}">
+                {{ form.as_p }}
+
+                <p class="submit">
+                    <input type="submit" value="{% trans 'Sign up' %}">
+                </p>
+            </form>
+
+        </div>
+    </div>
+</section>
+{% endblock %}
